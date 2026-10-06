@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="面向游戏 AI 产品、研发与法务团队的产品事实确认原型。" />
+  <title>游戏 AI 功能上线合规工作台</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23141b2d'/%3E%3Cpath d='M19 18h26v28H19z' fill='none' stroke='%236ee7c3' stroke-width='4'/%3E%3Cpath d='M25 27h14M25 35h9' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --surface: #131a2c;
+      --surface-2: #182238;
+      --line: #2b3853;
+      --text: #f5f7fb;
+      --muted: #aeb8cb;
+      --accent: #6ee7c3;
+      --accent-2: #88a7ff;
+      --warn: #ffcf70;
+      --danger: #ff8d94;
+      --shadow: 0 20px 48px rgba(0,0,0,.24);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(136,167,255,.13), transparent 34rem),
+        radial-gradient(circle at 90% 8%, rgba(110,231,195,.08), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+    }
+    button, select, input, textarea { font: inherit; }
+    button, select, textarea { color: var(--text); }
+    button { cursor: pointer; }
+    .shell { min-height: 100vh; }
+    header {
+      position: sticky; top: 0; z-index: 20;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(11,16,32,.88);
+      backdrop-filter: blur(16px);
+    }
+    .topbar { max-width: 1480px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 260px; }
+    .logo { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #3c4b68; border-radius: 11px; color: var(--accent); background: #11192a; font-weight: 800; }
+    .brand strong { display: block; font-size: 1rem; line-height: 1.2; }
+    .brand span { color: var(--muted); font-size: .78rem; }
+    .progress-wrap { flex: 1; display: flex; align-items: center; gap: 12px; }
+    .progress-track { height: 7px; flex: 1; overflow: hidden; border-radius: 999px; background: #26324a; }
+    .progress-bar { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .25s ease; }
+    .progress-label { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+    .layout { max-width: 1480px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 210px minmax(0, 1fr) 380px; gap: 22px; }
+    .side, .result { position: sticky; top: 86px; align-self: start; max-height: calc(100vh - 108px); overflow: auto; }
+    .panel { background: rgba(19,26,44,.9); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+    .side { padding: 14px; }
+    .side button { width: 100%; text-align: left; background: transparent; border: 0; border-radius: 12px; padding: 12px; margin: 3px 0; color: var(--muted); }
+    .side button:hover { background: rgba(255,255,255,.05); color: var(--text); }
+    .side button.active { background: rgba(110,231,195,.11); color: var(--accent); }
+    .step-num { display: inline-grid; place-items: center; width: 25px; height: 25px; margin-right: 8px; border-radius: 50%; border: 1px solid currentColor; font-size: .78rem; }
+    .side-note { margin: 16px 8px 4px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; }
+    main { min-width: 0; }
+    .intro { padding: 24px 26px; margin-bottom: 18px; background: linear-gradient(135deg, rgba(136,167,255,.12), rgba(110,231,195,.06)); }
+    .eyebrow { color: var(--accent); font-size: .8rem; letter-spacing: .12em; font-weight: 700; }
+    h1 { margin: 5px 0 8px; font-size: clamp(1.55rem, 2.4vw, 2.35rem); line-height: 1.25; letter-spacing: -.02em; }
+    .intro p { max-width: 840px; margin: 0; color: var(--muted); }
+    .notice { margin-top: 15px; padding: 12px 14px; border-left: 3px solid var(--warn); background: rgba(255,207,112,.07); color: #e8dfc9; font-size: .88rem; }
+    .section { display: none; padding: 24px 26px; }
+    .section.active { display: block; animation: rise .22s ease; }
+    @keyframes rise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+    .section-head { display: flex; gap: 16px; justify-content: space-between; align-items: flex-start; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+    h2 { margin: 0 0 5px; font-size: 1.3rem; }
+    .section-head p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .status-chip { flex: none; color: var(--accent); border: 1px solid rgba(110,231,195,.4); background: rgba(110,231,195,.07); border-radius: 999px; padding: 5px 10px; font-size: .75rem; }
+    .question { padding: 22px 0; border-bottom: 1px solid rgba(43,56,83,.75); }
+    .question:last-child { border-bottom: 0; }
+    .q-top { display: flex; justify-content: space-between; gap: 18px; align-items: baseline; }
+    .q-title { font-weight: 650; font-size: 1rem; }
+    .owner { color: var(--accent-2); font-size: .75rem; white-space: nowrap; }
+    .q-help { margin: 7px 0 13px; color: var(--muted); font-size: .86rem; }
+    .fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .72fr); gap: 12px; }
+    select, textarea, .check-grid { width: 100%; border: 1px solid #3a4864; border-radius: 11px; background: #10182a; }
+    select { min-height: 46px; padding: 0 40px 0 13px; }
+    textarea { min-height: 46px; padding: 11px 13px; resize: vertical; }
+    select:focus, textarea:focus, button:focus-visible { outline: 3px solid rgba(136,167,255,.28); outline-offset: 2px; border-color: var(--accent-2); }
+    .check-grid { padding: 10px 12px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 12px; }
+    .check-grid label { display: flex; gap: 8px; align-items: flex-start; color: #dfe5f1; font-size: .86rem; }
+    .check-grid input { margin-top: 5px; accent-color: var(--accent); }
+    details { margin-top: 11px; }
+    summary { cursor: pointer; width: fit-content; color: var(--accent); font-size: .82rem; }
+    details p { margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; color: var(--muted); background: rgba(110,231,195,.055); font-size: .84rem; }
+    .actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; }
+    .btn { border: 1px solid #40506f; border-radius: 11px; min-height: 44px; padding: 0 16px; background: #172139; }
+    .btn:hover { background: #202d49; }
+    .btn.primary { border-color: transparent; background: var(--accent); color: #082018; font-weight: 700; }
+    .btn.primary:hover { background: #8aefd2; }
+    .btn.ghost { background: transparent; color: var(--muted); }
+    .result { padding: 18px; }
+    .result-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 12px; }
+    .result h2 { font-size: 1.05rem; margin: 0; }
+    .tiny-btn { border: 1px solid #3a4864; border-radius: 9px; padding: 7px 10px; background: #111a2c; color: var(--muted); font-size: .75rem; }
+    .result-section { margin: 16px 0; }
+    .result-section h3 { margin: 0 0 8px; color: #c8d2e6; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
+    .result ul { margin: 0; padding-left: 20px; }
+    .result li { margin: 7px 0; color: #e3e8f2; font-size: .86rem; }
+    .result li small { display: block; color: var(--muted); }
+    .empty { color: var(--muted); padding: 10px 0; font-size: .86rem; }
+    .unknown { color: var(--warn) !important; }
+    .risk { color: #ffd5d8 !important; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+    .legend span { border-radius: 999px; padding: 4px 8px; font-size: .7rem; background: #10182a; color: var(--muted); border: 1px solid var(--line); }
+    .toast { position: fixed; z-index: 50; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: #f4f7fb; color: #111827; border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow); transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%,0); }
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 190px minmax(0, 1fr); }
+      .result { position: static; max-height: none; grid-column: 1 / -1; }
+    }
+    @media (max-width: 760px) {
+      .topbar { padding: 12px 16px; }
+      .brand span { display: none; }
+      .progress-label { display: none; }
+      .layout { display: block; padding: 14px; }
+      .side { position: static; display: flex; overflow-x: auto; max-height: none; margin-bottom: 14px; padding: 8px; }
+      .side button { width: auto; flex: 0 0 auto; white-space: nowrap; }
+      .side-note { display: none; }
+      .intro, .section { padding: 20px 17px; }
+      .fields { grid-template-columns: 1fr; }
+      .check-grid { grid-template-columns: 1fr; }
+      .section-head { display: block; }
+      .status-chip { display: inline-block; margin-top: 10px; }
+      .q-top { display: block; }
+      .owner { display: block; margin-top: 5px; }
+      .result { margin-top: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="topbar">
+        <div class="brand"><div class="logo">审</div><div><strong>游戏 AI 合规工作台</strong><span>产品事实确认 · 原型 v0.1</span></div></div>
+        <div class="progress-wrap"><div class="progress-track"><div class="progress-bar" id="progressBar"></div></div><div class="progress-label" id="progressLabel">0 / 17 已确认</div></div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav class="side panel" aria-label="问卷分组">
+        <button class="active" data-step="0"><span class="step-num">1</span>基本场景</button>
+        <button data-step="1"><span class="step-num">2</span>记忆产生</button>
+        <button data-step="2"><span class="step-num">3</span>数据用途</button>
+        <button data-step="3"><span class="step-num">4</span>用户控制</button>
+        <p class="side-note">可以选择“暂不清楚”。系统会把它列入待确认事项，而不是替业务方猜答案。</p>
+      </nav>
+
+      <main>
+        <section class="intro panel">
+          <div class="eyebrow">PRODUCT FACTS FIRST</div>
+          <h1>产品事实 <span aria-hidden="true">→</span> 法律判断</h1>
+          <p>供 AI 业务、产品、研发、数据安全与法务共同使用。选择已有答案，并在需要时补充口径、例外或责任人；右侧会实时生成事实摘要和待确认清单。</p>
+          <div class="notice">教学与作品集原型：当前页面不上传数据，也不自动给出“合规 / 不合规”结论。真实项目仍需结合产品文档、技术验证和适用法律复核。</div>
+        </section>
+
+        <form id="factForm" autocomplete="off">
+          <section class="section panel active" data-section="0">
+            <div class="section-head"><div><h2>基本场景</h2><p>确认产品面向谁、在哪里提供、长期记忆服务于什么功能。</p></div><span class="status-chip">建议：产品负责人牵头</span></div>
+            <div id="group-basic"></div>
+            <div class="actions"><button type="button" class="btn ghost" id="fillSample">填入示例</button><button type="button" class="btn primary next">继续：记忆产生</button></div>
+          </section>
+          <section class="section panel" data-section="1">
+            <div class="section-head"><div><h2>记忆产生</h2><p>重点不是“有开关就够了”，而是确认系统何时、从哪里、按什么规则生成记忆。</p></div><span class="status-chip">建议：产品 + 算法 / 后端</span></div>
+            <div id="group-memory"></div>
+            <div class="actions"><button type="button" class="btn prev">返回</button><button type="button" class="btn primary next">继续：数据用途</button></div>
+          </section>
+          <section class="section panel" data-section="2">
+            <div class="section-head"><div><h2>数据用途</h2><p>把“改善当前体验”“内部分析”“安全审核”“模型训练”分开确认。</p></div><span class="status-chip">建议：算法 + 数据 + 安全</span></div>
+            <div id="group-purpose"></div>
+            <div class="actions"><button type="button" class="btn prev">返回</button><button type="button" class="btn primary next">继续：用户控制</button></div>
+          </section>
+          <section class="section panel" data-section="3">
+            <div class="section-head"><div><h2>用户控制</h2><p>确认用户看得见、改得了、删得掉什么，以及删除后系统里实际发生什么。</p></div><span class="status-chip">建议：产品 + 后端 + 客服</span></div>
+            <div id="group-control"></div>
+            <div class="actions"><button type="button" class="btn prev">返回</button><button type="button" class="btn primary" id="downloadBtn">下载表格版确认摘要</button></div>
+          </section>
+        </form>
+      </main>
+
+      <aside class="result panel" aria-live="polite">
+        <div class="result-head"><h2>实时工作底稿</h2><button class="tiny-btn" id="copyBtn" type="button">复制摘要</button></div>
+        <div class="result-section"><h3>已确认事实</h3><div id="confirmed" class="empty">填写问卷后自动生成。</div></div>
+        <div class="result-section"><h3>待确认事项</h3><div id="unknowns" class="empty">暂未发现。</div></div>
+        <div class="result-section"><h3>初步关注点</h3><div id="risks" class="empty">根据事实组合提示，不代替法律判断。</div></div>
+        <div class="result-section"><h3>建议确认对象</h3><div id="owners" class="empty">暂未生成。</div></div>
+        <div class="legend"><span>✓ 已确认</span><span>？待确认</span><span>！需进一步评估</span></div>
+      </aside>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const questions = [
+      { id:'regions', group:'basic', title:'计划上线哪些地区？', help:'可先选主要地区，再在备注中补充分阶段上线计划。', owner:'产品类｜产品 / 商务', type:'select', options:['中国大陆','欧盟 / 欧洲经济区','英国','美国（全国）','美国加州','日本','韩国','多地区同步上线','暂不清楚'], why:'上线地区会影响后续需要进一步核对的监管框架、年龄门槛和数据跨境安排。' },
+      { id:'age', group:'basic', title:'目标或实际用户年龄主要分布在哪些年龄层？', help:'这是多选题，可同时选择多个年龄层；如业务口径更细，可在备注中补充。', owner:'产品类｜产品 / 用户研究', type:'checks', options:['8+','14+','16+','18+','无法可靠判断年龄'], why:'不同地区对儿童或未成年人的年龄界定可能不同，因此这里先收集真实用户分布和产品识别能力。' },
+      { id:'companion', group:'basic', title:'该功能是否属于 AI 角色陪伴或持续互动？', help:'例如 NPC 长期关系、虚拟伙伴、剧情外聊天或情绪陪伴。', owner:'产品类｜产品', type:'select', options:['是，核心功能','是，辅助功能','否','暂不清楚'], why:'陪伴关系会影响长期记忆的必要性、用户预期以及对情绪和健康信息的处理方式。' },
+      { id:'memoryScope', group:'basic', title:'“长期记忆”具体跨越什么范围？', help:'不要把当前窗口上下文、跨会话调用和模型训练混为一件事。', owner:'产品类｜产品；技术类｜算法 / 后端', type:'select', options:['仅当前会话上下文','同一角色的跨会话记忆','同一账号全部角色共享','跨设备但限同一账号','其他范围','暂不清楚'], why:'这一问题确定“记忆”的产品边界：它被谁调用、在什么对话里生效，以及用户是否可能预料到。' },
+
+      { id:'enableMode', group:'memory', title:'长期记忆默认如何开启？', help:'主动开启与默认开启应分别记录；“使用产品即同意”也需如实写明。', owner:'产品类｜产品', type:'select', options:['默认关闭，由用户主动开启','默认开启，用户可关闭','首次使用时单独询问','无独立开关','暂不清楚'], why:'开关状态只回答功能如何启用，并不等于用户已经同意所有记忆内容和全部数据用途。' },
+      { id:'creation', group:'memory', title:'记忆由谁触发生成？', help:'可以是用户明确说“请记住”，也可以是系统自动识别并提取。', owner:'产品类｜产品；技术类｜算法', type:'select', options:['仅用户逐条明确指定','系统提出建议，用户确认后保存','系统自动提取，用户事后可管理','用户指定与系统自动提取并存','暂不清楚'], why:'触发方式决定后续是否需要二次确认，以及用户是否能理解某条信息为什么进入长期记忆。' },
+      { id:'source', group:'memory', title:'系统从哪些内容中提取记忆？', help:'选择“全部历史对话”时，应继续确认历史范围和是否追溯处理。', owner:'技术类｜算法 / 后端', type:'select', options:['仅当前一轮对话','仅当前会话','开启功能后的全部对话','账号全部历史对话（含开启前）','用户手动填写资料','多种来源','暂不清楚'], why:'信息来源影响用户预期，也决定技术团队需要说明的检索范围、历史处理和隔离逻辑。' },
+      { id:'sensitive', group:'memory', title:'识别到健康、身份、财务等敏感信息时如何处理？', help:'“即时提示 / 二次确认”比“打破第四面墙提示”更适合写进正式方案。', owner:'治理类｜安全 / 法务；协作：产品', type:'select', options:['默认不写入长期记忆','逐条提示并由用户确认','仅保存概括标签，不保存原话','与普通信息相同处理','按敏感类型分别处理','暂不清楚'], why:'即使用户主动要求记住，仍需确认保存粒度、必要性、误识别风险和可撤回机制。' },
+      { id:'memoryForm', group:'memory', title:'长期记忆保存成什么形式？', help:'例如完整原文、自动摘要、结构化标签，或只保存检索所需的向量表示。', owner:'技术类｜算法 / 后端', type:'select', options:['完整对话原文','对话片段','自动摘要','结构化标签','向量 / 特征表示','多种形式并存','暂不清楚'], why:'不同保存形式影响用户能否看懂和修改，也影响误差传播、数据量和后续删除验证。' },
+
+      { id:'responseUse', group:'purpose', title:'记忆是否用于未来对话中的个性化回复？', help:'这是调用既有信息改善当前用户体验，不等于训练基础模型。', owner:'产品类｜产品；技术类｜算法', type:'select', options:['是','否','仅部分场景','暂不清楚'], why:'先确认功能目的及调用边界，再判断是否必要、是否符合用户预期。' },
+      { id:'trainingUse', group:'purpose', title:'对话或长期记忆是否用于模型训练 / 微调？', help:'如仅用于检索增强或当前回复，应选择“否”，不要笼统写成“用于优化”。', owner:'技术类｜算法；治理类｜数据', type:'select', options:['否，不用于训练或微调','是，默认用于','是，单独选择加入后用于','仅去标识 / 聚合数据用于','暂不清楚'], why:'模型训练是独立的数据用途，需要与个性化回复、质量分析和安全审核分别确认。' },
+      { id:'otherUses', group:'purpose', title:'还会用于哪些内部或外部用途？', help:'可多选；如果选中第三方服务商，请在备注写明服务类型。', owner:'治理类｜数据 / 安全 / 采购', type:'checks', options:['产品质量分析','安全审核','人工客服处理','推荐或营销','画像 / 用户分群','第三方模型或云服务','不用于其他用途','暂不清楚'], why:'同一份信息可能被多个系统和团队使用；用途拆分后才能识别数据流向和责任团队。' },
+      { id:'retention', group:'purpose', title:'长期记忆保存多久？', help:'如期限因记忆类型或用户状态不同，请在备注中说明。', owner:'技术类｜后端；治理类｜数据治理', type:'select', options:['用户关闭功能即删除','用户删除账号即删除','固定期限后自动删除','用户主动删除前持续保存','按类型设置不同期限','暂不清楚'], why:'“一直有用”不是可验证的保存期限。需要确认触发删除的事件和后台实际保留安排。' },
+
+      { id:'view', group:'control', title:'用户能否查看系统保存的每一条长期记忆？', help:'包括系统自动提取的内容和用户主动指定的内容。', owner:'产品类｜产品 / 前端', type:'select', options:['可以逐条查看','只能查看部分','只看到概括说明','完全不能查看','暂不清楚'], why:'可见性决定用户能否发现误记、过时信息或意外保存的敏感内容。' },
+      { id:'edit', group:'control', title:'用户能否修改错误或过时的记忆？', help:'如果只能删除后重新添加，也请如实选择。', owner:'产品类｜产品；技术类｜后端', type:'select', options:['可以直接修改','只能删除后重新添加','不能修改但可反馈','不能修改','暂不清楚'], why:'长期记忆会影响未来回复；错误信息如果无法纠正，可能被反复调用并放大。' },
+      { id:'delete', group:'control', title:'用户能否逐条删除、全部清除并关闭功能？', help:'三种操作若不一致，请在备注中分别说明。', owner:'产品类｜产品；技术类｜后端', type:'select', options:['三种操作都支持','仅支持逐条删除','仅支持全部清除 / 关闭','仅支持关闭，不清除已有记忆','均不支持','暂不清楚'], why:'“关闭”可能只是停止新增；需要区分停止调用、停止生成和删除已有数据。' },
+      { id:'deletionEffect', group:'control', title:'删除操作会清除哪些位置的数据？', help:'确认聊天记录、记忆库、分析数据、备份和训练数据是否分别受到影响。', owner:'技术类｜后端；治理类｜数据 / 安全', type:'select', options:['记忆库立即删除，其他系统按规则处理','记忆库和原始聊天同时删除','前台不可见但后台仍保留','含备份在内按期完成删除','不同系统效果不同','暂不清楚'], why:'前台显示“已删除”不必然代表所有副本立即消失，应把系统边界和完成时间说清楚。' }
+    ];
+
+    const groups = ['basic','memory','purpose','control'];
+    const state = {};
+    let currentStep = 0;
+
+    function questionHTML(q) {
+      const control = q.type === 'checks'
+        ? `<div class="check-grid" data-checks="${q.id}">${q.options.map((o,i)=>`<label><input type="checkbox" name="${q.id}" value="${o}"> <span>${o}</span></label>`).join('')}</div>`
+        : `<select id="${q.id}" name="${q.id}" aria-label="${q.title}"><option value="">请选择</option>${q.options.map(o=>`<option>${o}</option>`).join('')}</select>`;
+      return `<div class="question" data-question="${q.id}"><div class="q-top"><div class="q-title">${q.title}</div><span class="owner">确认对象：${q.owner}</span></div><p class="q-help">${q.help}</p><div class="fields">${control}<textarea id="${q.id}-note" aria-label="${q.title}补充备注" placeholder="补充备注（可选）"></textarea></div><details><summary>为什么要问？</summary><p>${q.why}</p></details></div>`;
+    }
+
+    groups.forEach(group => {
+      document.getElementById(`group-${group}`).innerHTML = questions.filter(q=>q.group===group).map(questionHTML).join('');
+    });
+
+    function readValue(q) {
+      if (q.type === 'checks') return [...document.querySelectorAll(`input[name="${q.id}"]:checked`)].map(x=>x.value);
+      return document.getElementById(q.id).value;
+    }
+
+    function updateState() {
+      questions.forEach(q => state[q.id] = { value: readValue(q), note: document.getElementById(`${q.id}-note`).value.trim() });
+      renderResults();
+    }
+
+    function hasAnswer(value) { return Array.isArray(value) ? value.length > 0 : Boolean(value); }
+    function isUnknown(value) { return Array.isArray(value) ? value.includes('暂不清楚') || value.includes('无法可靠判断年龄') : value === '暂不清楚'; }
+    function valueText(value) { return Array.isArray(value) ? value.join('、') : value; }
+
+    function deriveRisks() {
+      const r = [];
+      const v = id => state[id]?.value;
+      const ages = v('age') || [];
+      if (ages.some(x=>['8+','14+','16+'].includes(x))) r.push('产品可能触达未成年人：下一阶段需结合上线地区确认年龄识别、监护人机制与适龄设计要求。');
+      if (v('creation')?.includes('自动提取') && ['与普通信息相同处理','暂不清楚'].includes(v('sensitive'))) r.push('系统可能自动提取敏感信息，但敏感信息的保存确认规则不足或尚未明确。');
+      if (v('enableMode')?.startsWith('默认开启')) r.push('长期记忆默认开启：需进一步评估告知显著性、用户预期和关闭路径。');
+      if (v('trainingUse') && !v('trainingUse').startsWith('否')) r.push('长期记忆或对话可能进入模型训练流程：需单独核对选择机制、数据范围、去标识措施和退出效果。');
+      const other = v('otherUses') || [];
+      if (other.includes('第三方模型或云服务')) r.push('存在第三方模型或云服务：需补充供应商、传输字段、保存安排及合同责任分配。');
+      if (['完全不能查看','只看到概括说明'].includes(v('view')) || ['不能修改','不能修改但可反馈'].includes(v('edit'))) r.push('用户发现或纠正错误记忆的能力有限，可能导致过时或错误信息持续影响后续回复。');
+      if (['仅支持关闭，不清除已有记忆','均不支持'].includes(v('delete'))) r.push('关闭功能与删除已有记忆未充分区分，需确认用户撤回后的实际系统效果。');
+      if (['前台不可见但后台仍保留','暂不清楚'].includes(v('deletionEffect'))) r.push('删除后的后台、备份或衍生数据处理仍不清楚，需要技术验证。');
+      return r;
+    }
+
+    function renderList(target, items, cls='') {
+      const el = document.getElementById(target);
+      el.className = items.length ? '' : 'empty';
+      el.innerHTML = items.length ? `<ul>${items.map(x=>`<li class="${cls}">${x}</li>`).join('')}</ul>` : (target==='confirmed' ? '填写问卷后自动生成。' : target==='risks' ? '根据事实组合提示，不代替法律判断。' : '暂未发现。');
+    }
+
+    function renderResults() {
+      const confirmed = [], unknowns = [], ownerSet = new Set();
+      let answered = 0;
+      questions.forEach(q => {
+        const s = state[q.id] || {value:'', note:''};
+        if (hasAnswer(s.value)) {
+          answered++;
+          ownerSet.add(q.owner);
+          const line = `${q.title.replace(/[？?]$/,'')}：${valueText(s.value)}${s.note ? `（备注：${s.note}）` : ''}`;
+          if (isUnknown(s.value)) unknowns.push(`${q.title} — 建议向 ${q.owner} 确认${s.note ? `；现有备注：${s.note}` : ''}`);
+          else confirmed.push(line);
+        }
+      });
+      document.getElementById('progressBar').style.width = `${answered/questions.length*100}%`;
+      document.getElementById('progressLabel').textContent = `${answered} / ${questions.length} 已确认`;
+      renderList('confirmed', confirmed);
+      renderList('unknowns', unknowns, 'unknown');
+      renderList('risks', deriveRisks(), 'risk');
+      renderList('owners', [...ownerSet].map(x=>x));
+    }
+
+    function showStep(index) {
+      currentStep = Math.max(0, Math.min(3, index));
+      document.querySelectorAll('.section').forEach((el,i)=>el.classList.toggle('active', i===currentStep));
+      document.querySelectorAll('.side button').forEach((el,i)=>el.classList.toggle('active', i===currentStep));
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    document.querySelectorAll('select, textarea, input').forEach(el => el.addEventListener(el.type==='checkbox'?'change':'input', updateState));
+    document.querySelectorAll('.side button').forEach((b,i)=>b.addEventListener('click',()=>showStep(i)));
+    document.querySelectorAll('.next').forEach(b=>b.addEventListener('click',()=>showStep(currentStep+1)));
+    document.querySelectorAll('.prev').forEach(b=>b.addEventListener('click',()=>showStep(currentStep-1)));
+
+    function reportText() {
+      const confirmed = [], unknowns = [], owners = new Set();
+      questions.forEach(q => {
+        const s = state[q.id] || {value:'', note:''};
+        if (!hasAnswer(s.value)) return;
+        owners.add(q.owner);
+        if (isUnknown(s.value)) unknowns.push(`- ${q.title}（建议确认对象：${q.owner}）${s.note?`\n  现有备注：${s.note}`:''}`);
+        else confirmed.push(`- ${q.title.replace(/[？?]$/,'')}：${valueText(s.value)}${s.note?`\n  备注：${s.note}`:''}`);
+      });
+      const risks = deriveRisks();
+      return `游戏 AI 功能上线合规工作台｜产品事实确认摘要\n\n一、已确认事实\n${confirmed.join('\n') || '- 暂无'}\n\n二、待确认事项\n${unknowns.join('\n') || '- 暂无'}\n\n三、初步关注点（不代表法律结论）\n${risks.map(x=>`- ${x}`).join('\n') || '- 暂无'}\n\n四、建议参与确认的团队\n${[...owners].map(x=>`- ${x}`).join('\n') || '- 暂无'}\n\n说明：本摘要由教学与作品集原型生成，不构成法律意见；真实项目需结合产品文档、技术验证和适用法律复核。`;
+    }
+
+    function riskRows() {
+      const ids = new Map();
+      const v = id => state[id]?.value;
+      const add = (id, text) => ids.set(id, text);
+      if ((v('age') || []).some(x=>['8+','14+','16+'].includes(x))) add('age', '可能触达未成年人，需进一步核对年龄识别、监护机制与适龄设计。');
+      if (v('creation')?.includes('自动提取') && ['与普通信息相同处理','暂不清楚'].includes(v('sensitive'))) add('sensitive', '自动提取与敏感信息控制规则可能不匹配。');
+      if (v('enableMode')?.startsWith('默认开启')) add('enableMode', '默认开启可能影响用户预期，需评估告知和关闭路径。');
+      if (v('trainingUse') && !v('trainingUse').startsWith('否')) add('trainingUse', '涉及模型训练用途，需单独核对选择机制、范围与退出效果。');
+      if ((v('otherUses') || []).includes('第三方模型或云服务')) add('otherUses', '存在第三方处理，需核对传输字段、留存安排与合同责任。');
+      if (['完全不能查看','只看到概括说明'].includes(v('view'))) add('view', '用户发现错误或意外保存内容的能力可能不足。');
+      if (['不能修改','不能修改但可反馈'].includes(v('edit'))) add('edit', '错误或过时记忆可能持续影响后续回复。');
+      if (['仅支持关闭，不清除已有记忆','均不支持'].includes(v('delete'))) add('delete', '关闭功能与删除已有记忆未充分区分。');
+      if (['前台不可见但后台仍保留','暂不清楚'].includes(v('deletionEffect'))) add('deletionEffect', '后台、备份或衍生数据的删除效果尚不清楚。');
+      return ids;
+    }
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
+    function tableReportHTML() {
+      const groupNames = { basic:'基本场景', memory:'记忆产生', purpose:'数据用途', control:'用户控制' };
+      const flagged = riskRows();
+      const rows = questions.map((q, index) => {
+        const s = state[q.id] || {value:'', note:''};
+        const answered = hasAnswer(s.value);
+        let status = '已确认', statusClass = 'ok', note = s.note || '';
+        if (!answered) { status = '待填写'; statusClass = 'pending'; }
+        else if (isUnknown(s.value)) { status = '待确认'; statusClass = 'pending'; }
+        if (flagged.has(q.id)) { status = '初步风险'; statusClass = 'risk'; note = [note, flagged.get(q.id)].filter(Boolean).join('；'); }
+        return `<tr class="${statusClass}"><td>${index+1}</td><td>${esc(groupNames[q.group])}</td><td>${esc(q.title)}</td><td>${esc(answered ? valueText(s.value) : '—')}</td><td>${esc(note || '—')}</td><td class="status">${esc(status)}</td><td>${esc(q.owner)}</td></tr>`;
+      }).join('');
+      const risks = deriveRisks();
+      return `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><title>游戏AI功能产品事实确认表</title><style>
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:#1f2937;margin:28px;line-height:1.55}h1{font-size:24px;margin:0 0 6px}p{margin:4px 0 16px;color:#596579}.meta{padding:12px 14px;background:#f3f6fa;border-left:4px solid #64748b;margin:16px 0}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#172033;color:white;text-align:left;padding:10px 8px;border:1px solid #46536b}td{padding:9px 8px;border:1px solid #cbd5e1;vertical-align:top}.ok td{background:#f1faf6}.pending td{background:#fff7d6}.risk td{background:#ffe3e5}.status{font-weight:700;white-space:nowrap}.legend{display:flex;gap:10px;margin:12px 0}.legend span{padding:4px 9px;border-radius:999px;font-size:12px}.l-ok{background:#d9f5e5}.l-pending{background:#fff0b5}.l-risk{background:#ffcdd2}h2{font-size:17px;margin-top:24px}li{margin:5px 0}.foot{font-size:12px;color:#64748b;margin-top:18px;border-top:1px solid #cbd5e1;padding-top:12px}@media print{body{margin:10mm}thead{display:table-header-group}tr{break-inside:avoid}}
+      </style></head><body><h1>游戏 AI 功能产品事实确认表</h1><p>生成时间：${esc(new Date().toLocaleString('zh-CN'))}</p><div class="meta">本表用于整理产品事实、待确认事项和初步风险提示。颜色标注不代表最终法律结论。</div><div class="legend"><span class="l-ok">已确认</span><span class="l-pending">待填写 / 待确认</span><span class="l-risk">初步风险</span></div><table><thead><tr><th>序号</th><th>模块</th><th>产品事实问题</th><th>已填答案</th><th>补充备注 / 风险提示</th><th>状态</th><th>确认对象</th></tr></thead><tbody>${rows}</tbody></table><h2>汇总关注点</h2>${risks.length ? `<ul>${risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : '<p>暂无自动生成的关注点。</p>'}<p class="foot">说明：本报告由教学与作品集原型生成，不构成法律意见；真实项目需结合产品文档、技术验证和适用法律复核。</p></body></html>`;
+    }
+
+    function toast(msg) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1600); }
+    document.getElementById('copyBtn').addEventListener('click', async()=>{ try { await navigator.clipboard.writeText(reportText()); toast('摘要已复制'); } catch { toast('复制失败，请使用下载'); } });
+    document.getElementById('downloadBtn').addEventListener('click', ()=>{ const blob=new Blob(['\ufeff', tableReportHTML()],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='游戏AI功能产品事实确认表.html'; a.click(); URL.revokeObjectURL(a.href); toast('表格版摘要已下载'); });
+
+    document.getElementById('fillSample').addEventListener('click', ()=>{
+      const sample = { regions:'欧盟 / 欧洲经济区', companion:'是，核心功能', memoryScope:'同一角色的跨会话记忆', enableMode:'默认关闭，由用户主动开启', creation:'系统提出建议，用户确认后保存', source:'开启功能后的全部对话', sensitive:'逐条提示并由用户确认', memoryForm:'自动摘要', responseUse:'是', trainingUse:'否，不用于训练或微调', retention:'用户主动删除前持续保存', view:'可以逐条查看', edit:'可以直接修改', delete:'三种操作都支持', deletionEffect:'记忆库立即删除，其他系统按规则处理' };
+      Object.entries(sample).forEach(([id,val])=>document.getElementById(id).value=val);
+      ['14+','16+','18+'].forEach(val=>{ const el=document.querySelector(`input[name="age"][value="${val}"]`); if(el) el.checked=true; });
+      ['产品质量分析','安全审核','第三方模型或云服务'].forEach(val=>{ const el=document.querySelector(`input[name="otherUses"][value="${val}"]`); if(el) el.checked=true; });
+      document.getElementById('regions-note').value='首期德语区与法国，后续扩展其他欧盟市场';
+      document.getElementById('otherUses-note').value='第三方仅提供推理服务，具体数据保留安排待采购与技术确认';
+      updateState(); toast('已填入演示案例');
+    });
+
+    updateState();
+  </script>
+</body>
+</html>
